@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use serde::Deserialize;
 
 #[derive(Debug, PartialEq, Deserialize)]
@@ -21,13 +22,13 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: String) -> Self {
-        let f = std::fs::File::open(path).unwrap();
-        serde_yaml::from_reader(f).unwrap()
+    pub fn from_file(path: String) -> Result<Self> {
+        let f = std::fs::File::open(path)?;
+        serde_yaml::from_reader(f).context("Failed to deserialized config file")
     }
 
-    pub fn from_str(s: &str) -> Self {
-        serde_yaml::from_str(s).unwrap()
+    pub fn from_str(s: &str) -> Result<Self> {
+        serde_yaml::from_str(s).context("Failed to deserialized config file")
     }
 }
 
@@ -39,7 +40,7 @@ windows:
   - name: vim
     before_command: vim
 ";
-    let config = Config::from_str(input);
+    let config = Config::from_str(input).expect("Failed to read from input");
     assert_eq!(config.session_name, Some("Test".to_string()));
     assert_eq!(config.start_directory, Some("/tmp".to_string()));
     assert_eq!(
@@ -61,7 +62,7 @@ windows:
         - cd
         - vim
 ";
-    let config = Config::from_str(input);
+    let config = Config::from_str(input).unwrap();
     assert_eq!(
         config.windows[0],
         Window {
@@ -81,7 +82,7 @@ session_name: Test
 windows:
   - name: vim
 ";
-    let config = Config::from_str(input);
+    let config = Config::from_str(input).unwrap();
     assert_eq!(
         config.windows[0],
         Window {

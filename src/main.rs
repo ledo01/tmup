@@ -3,6 +3,7 @@ mod load;
 
 use crate::cli::Args;
 use crate::load::Config;
+use anyhow::{Context, Result};
 use clap::Parser;
 use load::BeforeCommand;
 use tmux_interface::{AttachSession, NewSession, TmuxCommand};
@@ -26,7 +27,7 @@ impl Session {
         }
     }
 
-    pub fn build(&self) {
+    pub fn build(&self) -> Result<()> {
         let root = &self.dir;
         let mut session = NewSession::new();
         session.detached();
@@ -42,17 +43,21 @@ impl Session {
                     session.window_name(name);
                 }
 
-                session.output().unwrap();
+                session.output()?;
 
                 if let Some(cmds) = &window.cmds {
-                    send_command(cmds.to_vec())
+                    send_command(cmds.to_vec())?;
                 }
             } else {
-                window.build(root.to_string())
+                window.build(root.to_string())?;
             }
         }
 
-        AttachSession::new().output().unwrap();
+        AttachSession::new()
+            .output()
+            .context("Failed to attach to session")?;
+
+        Ok(())
     }
 }
 
@@ -75,7 +80,7 @@ impl Window {
         }
     }
 
-    pub fn build(&self, root: String) {
+    pub fn build(&self, root: String) -> Result<()> {
         let mut cmd = TmuxCommand::new().new_window();
 
         if let Some(name) = &self.name {
@@ -88,29 +93,28 @@ impl Window {
             cmd.start_directory(root);
         }
 
-        cmd.output().unwrap();
+        cmd.output()?;
 
         if let Some(cmds) = &self.cmds {
-            send_command(cmds.to_vec());
+            send_command(cmds.to_vec())?;
         }
+
+        Ok(())
     }
 }
 
-pub fn send_command(cmds: Vec<String>) {
+pub fn send_command(cmds: Vec<String>) -> Result<()> {
     for cmd in cmds {
-        TmuxCommand::new()
-            .send_keys()
-            .key(cmd + "\n")
-            .output()
-            .unwrap();
+        TmuxCommand::new().send_keys().key(cmd + "\n").output()?;
     }
+    Ok(())
 }
 
-fn main() -> Result<(), ()> {
+fn main() -> Result<()> {
     let args = Args::parse();
-    let config = Config::from_file(args.file);
+    let config = Config::from_file(args.file).context("Failed to read config from file")?;
     let session = Session::from_config(config);
-    session.build();
+    session.build()?;
 
     Ok(())
 }
