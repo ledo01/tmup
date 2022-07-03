@@ -71,7 +71,7 @@ impl Window {
     pub fn from_config(config: load::Window) -> Self {
         Window {
             name: Some(config.name),
-            dir: None,
+            dir: config.start_directory,
             cmds: match config.before_command {
                 None => None,
                 Some(BeforeCommand::One(cmd)) => Some(vec![cmd]),

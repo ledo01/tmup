@@ -11,6 +11,7 @@ pub enum BeforeCommand {
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Window {
     pub name: String,
+    pub start_directory: Option<String>,
     pub before_command: Option<BeforeCommand>,
 }
 
@@ -48,6 +49,7 @@ windows:
         Window {
             name: "vim".to_string(),
             before_command: Some(BeforeCommand::One("vim".to_string())),
+            start_directory: None,
         }
     );
 }
@@ -67,6 +69,7 @@ windows:
         config.windows[0],
         Window {
             name: "vim".to_string(),
+            start_directory: None,
             before_command: Some(BeforeCommand::Many(vec![
                 "cd".to_string(),
                 "vim".to_string()
@@ -88,6 +91,26 @@ windows:
         Window {
             name: "vim".to_string(),
             before_command: None,
+            start_directory: None,
+        }
+    );
+}
+
+#[test]
+fn start_directory() {
+    let input = "start_directory: /tmp
+session_name: Test
+windows:
+  - name: vim
+    start_directory: /tmp/test
+";
+    let config = Config::from_str(input).unwrap();
+    assert_eq!(
+        config.windows[0],
+        Window {
+            name: "vim".to_string(),
+            before_command: None,
+            start_directory: Some(String::from("/tmp/test")),
         }
     );
 }
