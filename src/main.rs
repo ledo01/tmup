@@ -9,7 +9,7 @@ use tmux_interface::{AttachSession, NewSession, TmuxCommand};
 
 struct Session {
     name: Option<String>,
-    dir: Option<String>,
+    dir: String,
     windows: Vec<Window>,
 }
 
@@ -17,7 +17,7 @@ impl Session {
     pub fn from_config(config: Config) -> Self {
         Session {
             name: config.session_name,
-            dir: config.start_directory,
+            dir: config.start_directory.unwrap_or_else(|| String::from(".")),
             windows: config
                 .windows
                 .into_iter()
@@ -26,30 +26,30 @@ impl Session {
         }
     }
 
-    pub fn build(mut self) {
-        let root = self.dir.unwrap_or_else(|| ".".to_string());
+    pub fn build(&self) {
+        let root = &self.dir;
         let mut session = NewSession::new();
         session.detached();
-        session.start_directory(root.clone());
+        session.start_directory(root);
 
-        if let Some(name) = self.name {
+        if let Some(name) = &self.name {
             session.session_name(name);
         }
 
-        let first_window = self.windows.pop().unwrap();
+        for (i, window) in self.windows.iter().enumerate() {
+            if i == 0 {
+                if let Some(name) = &window.name {
+                    session.window_name(name);
+                }
 
-        if let Some(name) = first_window.name {
-            session.window_name(name);
-        }
+                session.output().unwrap();
 
-        session.output().unwrap();
-
-        if let Some(cmds) = first_window.cmds {
-            send_command(cmds)
-        }
-
-        for window in self.windows {
-            window.build(root.clone())
+                if let Some(cmds) = &window.cmds {
+                    send_command(cmds.to_vec())
+                }
+            } else {
+                window.build(root.to_string())
+            }
         }
 
         AttachSession::new().output().unwrap();
@@ -75,19 +75,23 @@ impl Window {
         }
     }
 
-    pub fn build(self, root: String) {
+    pub fn build(&self, root: String) {
         let mut cmd = TmuxCommand::new().new_window();
 
-        if let Some(name) = self.name {
+        if let Some(name) = &self.name {
             cmd.window_name(name);
         }
 
-        cmd.start_directory(self.dir.unwrap_or(root));
+        if let Some(dir) = &self.dir {
+            cmd.start_directory(dir);
+        } else {
+            cmd.start_directory(root);
+        }
 
         cmd.output().unwrap();
 
-        if let Some(cmds) = self.cmds {
-            send_command(cmds);
+        if let Some(cmds) = &self.cmds {
+            send_command(cmds.to_vec());
         }
     }
 }
