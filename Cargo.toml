@@ -10,6 +10,7 @@ authors = ["Olivier Leduc <leduc.o@gmail.com>"]
 [dependencies]
 anyhow = "1.0.58"
 clap = { version = "3.2.8", features = ["derive"] }
+dirs = "4.0.0"
 serde = { version = "1.0.137", features = ["derive"] }
 serde_yaml = "0.8.24"
 tmux_interface = {version = "0.2.1", features = ["tmux_0_8"] }
