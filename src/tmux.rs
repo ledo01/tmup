@@ -1,8 +1,5 @@
-use crate::cli::Args;
-use crate::load::Config;
+use crate::config;
 use anyhow::{Context, Result};
-use clap::Parser;
-use load::BeforeCommand;
 use tmux_interface::{AttachSession, NewSession, TmuxCommand};
 
 pub struct Session {
@@ -12,7 +9,7 @@ pub struct Session {
 }
 
 impl Session {
-    pub fn from_config(config: Config) -> Self {
+    pub fn from_config(config: config::Config) -> Self {
         Session {
             name: config.session_name,
             dir: config.start_directory.unwrap_or_else(|| String::from(".")),
@@ -65,14 +62,14 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn from_config(config: load::Window) -> Self {
+    pub fn from_config(config: config::Window) -> Self {
         Window {
             name: Some(config.name),
             dir: config.start_directory,
             cmds: match config.before_command {
                 None => None,
-                Some(BeforeCommand::One(cmd)) => Some(vec![cmd]),
-                Some(BeforeCommand::Many(cmds)) => Some(cmds),
+                Some(config::BeforeCommand::One(cmd)) => Some(vec![cmd]),
+                Some(config::BeforeCommand::Many(cmds)) => Some(cmds),
             },
         }
     }
