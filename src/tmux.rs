@@ -43,7 +43,7 @@ impl Session {
                     send_command(cmds.to_vec())?;
                 }
             } else {
-                window.build(root.to_string())?;
+                window.build(root)?;
             }
         }
 
@@ -74,7 +74,7 @@ impl Window {
         }
     }
 
-    pub fn build(&self, root: String) -> Result<()> {
+    pub fn build(&self, root: &str) -> Result<()> {
         let mut cmd = TmuxCommand::new().new_window();
 
         if let Some(name) = &self.name {

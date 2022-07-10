@@ -23,7 +23,7 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_file(path: String) -> Result<Self> {
+    pub fn from_file(path: &str) -> Result<Self> {
         let f = std::fs::File::open(path)?;
         serde_yaml::from_reader(f).context("Failed to deserialized config file")
     }
